@@ -1,0 +1,120 @@
+# Spring Boot application that prints "hello-world-$counter" with the counter incrementing on every refresh
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+public class HelloWorldController {
+    @Autowired
+    private CounterService counterService;
+
+    @GetMapping("/")
+    public String helloWorld(Model model) {
+        int counter = counterService.getCounter();
+        model.addAttribute("message", "Hello, World-" + counter);
+        return "hello";
+    }
+}
+
+# To Create a service to manage the counter:
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class CounterService {
+    private int counter = 0;
+
+    public int getCounter() {
+        return counter++;
+    }
+}
+
+# html code for Printing Hello world :
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Hello World App</title>
+</head>
+<body>
+    <h1 th:text="${message}"></h1>
+</body>
+</html>
+
+
+# Step 1: Containerize the Spring Boot App
+
+
+
+# Use an official OpenJDK runtime as a parent image
+# DockerFile
+FROM openjdk:11-jre-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the Uber JAR into the container
+COPY target/your-app-name.jar app.jar
+
+# Expose the port the app runs on
+EXPOSE 9090
+
+# Command to run the Spring Boot application
+CMD ["java", "-jar", "app.jar"]
+
+# Build the Docker image using the following command:
+
+docker build -t your-app-name .
+
+# Run the Docker container and map port 9090 on the host to the exposed port inside the container:
+docker run -p 9090:9090 your-app-name
+# helm install your-app-release your-app-chart-0.1.0.tgz
+
+
+
+# Provision a Jenkins Server:
+
+docker run -d -p 8080:8080 -p 50000:50000 --name jenkins jenkins/jenkins:lts
+
+
+# Create a Declarative Multibranch Pipeline
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    // Check out the code from the source code repository
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Build and Package') {
+            steps {
+                script {
+                    // Build and package the Spring Boot application
+                    sh 'mvn clean package'
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            when {
+                branch 'master' // Define the branch to deploy
+            }
+            steps {
+                script {
+                    // Deploy the application to Kubernetes
+                    withKubeConfig([credentialsId: 'your-kube-credentials']) {
+                        sh 'kubectl apply -f kubernetes/deployment.yaml'
+                    }
+                }
+            }
+        }
+    }
+}
